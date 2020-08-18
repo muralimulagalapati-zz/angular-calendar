@@ -1,0 +1,227 @@
+<div class="row text-center">
+  <div class="col-md-4">
+    <div class="btn-group">
+      <div
+        class="btn btn-primary"
+        mwlCalendarPreviousView
+        [view]="view"
+        [(viewDate)]="viewDate"
+        (viewDateChange)="closeOpenMonthViewDay()"
+      >
+        Previous
+      </div>
+      <div
+        class="btn btn-outline-secondary"
+        mwlCalendarToday
+        [(viewDate)]="viewDate"
+      >
+        Today
+      </div>
+      <div
+        class="btn btn-primary"
+        mwlCalendarNextView
+        [view]="view"
+        [(viewDate)]="viewDate"
+        (viewDateChange)="closeOpenMonthViewDay()"
+      >
+        Next
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <h3>{{ viewDate | calendarDate:(view + 'ViewTitle'):'en' }}</h3>
+  </div>
+  <div class="col-md-4">
+    <div class="btn-group">
+      <div
+        class="btn btn-primary"
+        (click)="setView(CalendarView.Month)"
+        [class.active]="view === CalendarView.Month"
+      >
+        Month
+      </div>
+      <div
+        class="btn btn-primary"
+        (click)="setView(CalendarView.Week)"
+        [class.active]="view === CalendarView.Week"
+      >
+        Week
+      </div>
+      <div
+        class="btn btn-primary"
+        (click)="setView(CalendarView.Day)"
+        [class.active]="view === CalendarView.Day"
+      >
+        Day
+      </div>
+    </div>
+  </div>
+</div>
+<br />
+
+<ng-template #loading>
+  <div class="text-center">
+    <i class="fas fa-spin fa-spinner fa-5x"></i> <br />
+    Loading events...
+  </div>
+</ng-template>
+
+<div *ngIf="events$ | async; else loading; let events">
+  <div [ngSwitch]="view">
+    <mwl-calendar-month-view
+      *ngSwitchCase="CalendarView.Month"
+      [viewDate]="viewDate"
+      [events]="events"
+      [refresh]="refresh"
+      [activeDayIsOpen]="activeDayIsOpen"
+      (eventClicked)="handleEvent('Clicked', $event.event)"
+      (eventTimesChanged)="eventTimesChanged($event)"
+    >
+    </mwl-calendar-month-view>
+    <mwl-calendar-week-view
+      *ngSwitchCase="CalendarView.Week"
+      [viewDate]="viewDate"
+      [events]="events"
+      [refresh]="refresh"
+      (eventClicked)="handleEvent('Clicked', $event.event)"
+      (eventTimesChanged)="eventTimesChanged($event)"
+    >
+    </mwl-calendar-week-view>
+    <mwl-calendar-day-view
+      *ngSwitchCase="CalendarView.Day"
+      [viewDate]="viewDate"
+      [events]="events"
+      [refresh]="refresh"
+      (eventClicked)="handleEvent('Clicked', $event.event)"
+      (eventTimesChanged)="eventTimesChanged($event)"
+    >
+    </mwl-calendar-day-view>
+  </div>
+</div>
+
+<ng-template #modalContent let-close="close">
+  <div class="modal-header btn-primary">
+    <h5 class="modal-title">{{modalData?.event?.title}}</h5>
+    <div class="float-right">
+      <button type="button" class="edit" (click)="editModal(modalData?.event)">
+        <span aria-hidden="true">Edit</span>
+      </button>
+      <button type="button" class="close" (click)="close()">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+  </div>
+  <div *ngIf="requests$ | async; else loading; let requests" class="modal-body">
+    <div class="row">
+      <div class="col-6">
+        <label>Facility</label>
+        <input type="text" class="form-control-plaintext" id="viewModalFacility" aria-describedby="eventType" placeholder={{modalData?.event?.facility}} readonly>
+      </div>
+      <div class="col-6">
+        <label for="event-type">Event Type</label>
+        <input type="text" class="form-control-plaintext" id="viewModalEventType" aria-describedby="eventType" placeholder={{modalData?.event?.eventType}} readonly>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-6">
+        <label>Start Date & Time</label>
+        <input type="text" class="form-control-plaintext" id="viewModalStart" aria-describedby="eventType" placeholder={{modalData?.event?.start}} readonly>
+      </div>
+      <div class="col-6">
+        <label for="event-type">End Date & Time</label>
+        <input type="text" class="form-control-plaintext" id="viewModalEnd" aria-describedby="eventType" placeholder={{modalData?.event?.end}} readonly>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="description">Description</label>
+      <textarea rows="3" class="form-control-plaintext" id="viewModalDescription" aria-describedby="description">{{modalData?.event?.description}}</textarea>
+    </div>
+    <div class="form-group">
+      <label for="recurrence">Recurrence</label>
+      <input type="text" class="form-control-plaintext" id="viewModalRecurrence" aria-describedby="recurrence" placeholder={{modalData?.event?.recurrence}} readonly>
+    </div>
+    <div *ngFor="let request of requests">
+      <div>{{request?.name}}</div>
+      <div>{{request?.description}}</div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #editModalContent let-close="close">
+  <div class="modal-header btn-primary">
+    <h5 class="modal-title">Edit Event</h5>
+    <button type="button" class="close" (click)="close()">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body" style="padding: 2rem">
+    <form id="editForm" (submit)="editEvent(modalData?.event)">
+      <div class="form-group">
+        <label for="title">Title</label>
+        <input type="text" class="form-control" id="editModalTitle" aria-describedby="title" placeholder={{modalData?.event?.title}} readonly />
+      </div>
+      <div class="form-group form-row">
+        <div class="col-6">
+          <label for="facility">Facility</label>
+          <input type="text" class="form-control" id="editModalFacility" aria-describedby="facility" placeholder={{modalData?.event?.facility}} readonly>
+        </div>
+        <div class="col-6">
+          <label for="event-type">Event Type</label>
+          <input type="text" class="form-control" id="editModalEventType" aria-describedby="eventType" placeholder={{modalData?.event?.eventType}} readonly>
+        </div>
+      </div>
+      <div class="form-group form-row">
+        <div class="col-6">
+          <label for="start-date">Start Date & Time</label>
+          <input
+            class="form-control"
+            type="text"
+            name="startdate"
+            mwlFlatpickr
+            [(ngModel)]="modalData.event.start"
+            (ngModelChange)="refresh.next()"
+            [altInput]="true"
+            [convertModelValue]="true"
+            [enableTime]="true"
+            dateFormat="Y-m-dTH:i"
+            altFormat="F j, Y H:i"
+            placeholder="Not set"
+          />
+        </div>
+        <div class="col-6">
+          <label for="event-type">Event Type</label>
+          <input
+            class="form-control"
+            type="text"
+            name="enddate"
+            mwlFlatpickr
+            [(ngModel)]="modalData.event.end"
+            (ngModelChange)="refresh.next()"
+            [altInput]="true"
+            [convertModelValue]="true"
+            [enableTime]="true"
+            dateFormat="Y-m-dTH:i"
+            altFormat="F j, Y H:i"
+            placeholder="Not set"
+          />
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="description">Description</label>
+        <textarea rows="3" class="form-control" id="editModalDescription" name="description" aria-describedby="description">{{modalData?.event?.description}}</textarea>
+      </div>
+      <div class="form-group">
+        <label for="recurrence">Recurrence</label>
+        <input type="text" class="form-control" id="editModalRecurrence" aria-describedby="recurrence" placeholder={{modalData?.event?.recurrence}} readonly>
+      </div>
+      <div style="padding: 1rem 1rem 1rem 0rem">
+        <button type="submit" class="btn btn-outline-secondary">
+          Save
+        </button>
+        <button type="button" class="btn btn-outline-secondary" (click)="close()">
+          Close
+        </button>
+      </div>
+    </form>
+  </div>
+</ng-template>

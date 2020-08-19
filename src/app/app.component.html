@@ -72,10 +72,8 @@
       *ngSwitchCase="CalendarView.Month"
       [viewDate]="viewDate"
       [events]="events"
-      [refresh]="refresh"
       [activeDayIsOpen]="activeDayIsOpen"
       (eventClicked)="handleEvent('Clicked', $event.event)"
-      (eventTimesChanged)="eventTimesChanged($event)"
     >
     </mwl-calendar-month-view>
     <mwl-calendar-week-view
@@ -141,8 +139,9 @@
       <input type="text" class="form-control-plaintext" id="viewModalRecurrence" aria-describedby="recurrence" placeholder={{modalData?.event?.recurrence}} readonly>
     </div>
     <div *ngFor="let request of requests">
-      <div>{{request?.name}}</div>
-      <div>{{request?.description}}</div>
+      <div>Request ID: {{request?.id}}</div>
+      <div>Name: {{request?.name}}</div>
+      <div>Description: {{request?.description}}</div>
     </div>
   </div>
 </ng-template>

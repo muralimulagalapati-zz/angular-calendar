@@ -12,8 +12,6 @@ import { adapterFactory } from 'angular-calendar/date-adapters/date-fns';
 import { NgbModalModule } from '@ng-bootstrap/ng-bootstrap';
 import { AppComponent } from './app.component';
 
-import 'node_modules/flatpickr/dist/flatpickr.css'
-
 @NgModule({
   imports: [
     CommonModule,

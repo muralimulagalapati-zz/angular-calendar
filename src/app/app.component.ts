@@ -17,6 +17,7 @@ import {
   IserverEvent,
   IrequestsObject
 } from './app.interfaces'
+import { format } from 'date-fns';
 
 @Component({
   selector: 'app-root',
@@ -25,17 +26,26 @@ import {
   templateUrl: 'app.component.html',
   providers: [ NgbActiveModal ], 
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
 
   @ViewChild('modalContent', { static: true }) modalContent: TemplateRef<any>;
   @ViewChild('editModalContent', { static: true }) editModalContent: TemplateRef<any>
   events$: Observable<CalendarEvent<IserverEvent>[]>;
+  eventsToday$: Observable<CalendarEvent<IserverEvent>[]>;
   requests$: Observable<IrequestsObject[]>;
   view: CalendarView = CalendarView.Month;
   CalendarView = CalendarView;
   viewDate: Date = new Date();
   modalData: { event: CalendarEvent };
   activeDayIsOpen: boolean = false;
+  requestIndex = [];
+  // for right sidebar
+  formattedDate = format(new Date(), 'dd-EEEE-MMMM yyyy')?.toString()?.split('-')
+  todayObj = {
+    day: this.formattedDate[0],
+    weekday: this.formattedDate[1],
+    monthyear: this.formattedDate[2]
+  }
 
   constructor(
     private activeModal: NgbActiveModal,
@@ -46,20 +56,21 @@ export class AppComponent {
   ngOnInit(): void {
     this.events$ = this.appService.events
     this.requests$ = this.appService.requests
+    this.eventsToday$ = this.appService.eventstoday
     this.appService.fetchAllEvents()
   }
 
   handleEvent(action: string, event: CalendarEvent): void {
     this.closeActiveModal()
     this.modalData = { event };
-    this.activeModal = this.modal.open(this.modalContent, { size: 'lg' });
+    this.activeModal = this.modal.open(this.modalContent, { size: 'md' });
     this.appService.fetchEventRequests(event?.id)
   }
 
   editModal(event: CalendarEvent): void {
     this.closeActiveModal()
     this.modalData = { event }
-    this.activeModal = this.modal.open(this.editModalContent, { size: 'lg' })
+    this.activeModal = this.modal.open(this.editModalContent, { size: 'md' })
   }
 
   setView(view: CalendarView) {
@@ -91,5 +102,17 @@ export class AppComponent {
 
   closeActiveModal() {
     this.activeModal && this.activeModal.close()
+  }
+
+  toggleRequest(i) {
+    this.requestIndex[i] = !this.requestIndex[i]
+  }
+
+  showRequest(i) {
+    return !!this.requestIndex[i]
+  }
+
+  showAllEvents() {
+    this.view = CalendarView.Day
   }
 }

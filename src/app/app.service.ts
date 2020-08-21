@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
-import { parseISO } from 'date-fns'
+import { parseISO, isToday } from 'date-fns'
 import { CalendarEvent, CalendarEventAction } from 'angular-calendar'
 import {
   IserverEvent,
@@ -14,10 +14,12 @@ import {
 export class AppService {
   private _events = new BehaviorSubject<CalendarEvent<IserverEvent>[]>([])
   private _requests = new BehaviorSubject<IrequestsObject[]>([])
+  private _eventsToday = new BehaviorSubject<CalendarEvent<IserverEvent>[]>([])
   private baseUrl = 'http://127.0.0.1:3000'
   private eventStore: any[] = []
   readonly events = this._events.asObservable()
   readonly requests = this._requests.asObservable()
+  readonly eventstoday = this._eventsToday.asObservable()
   
   constructor(private http: HttpClient) {}
 
@@ -30,7 +32,11 @@ export class AppService {
           start: event.start ? parseISO(event.start) : new Date(),
           end: event.end ? parseISO(event.end) : new Date(),
         }))
+        const eventsToday = this.eventStore.filter(ev => (
+          isToday(ev.start) || isToday(ev.end)
+        ))
         this._events.next([...this.eventStore])
+        this._eventsToday.next([...eventsToday])
       },
       error => console.error('Error in loading all events', error)
     )
@@ -57,7 +63,11 @@ export class AppService {
             }
           }
         })
+        const eventsToday = this.eventStore.filter(ev => (
+          isToday(ev.start) || isToday(ev.end)
+        ))
         this._events.next([...this.eventStore])
+        this._eventsToday.next([...eventsToday])
         /**
          * Or, use this.
          * However this will make another API call to get all events.
